@@ -48,6 +48,20 @@ function setRunning(btn, running, idle) {
 
 function showResult(id, on) {
   $(id).classList.toggle("show", on);
+  if (!on) return;
+  // Once the card has opened, glide down just enough to show it, so the
+  // run and its result fit in one screen recording.
+  const card = $(id);
+  let done = false;
+  const reveal = (e) => {
+    if (done || (e && e.propertyName !== "max-height")) return;
+    done = true;
+    card.removeEventListener("transitionend", reveal);
+    const over = card.getBoundingClientRect().bottom - innerHeight + 20;
+    if (over > 0) scrollBy({ top: over, behavior: "smooth" });
+  };
+  card.addEventListener("transitionend", reveal);
+  setTimeout(reveal, 900); // in case the transition never reports back
 }
 
 let digitsPromise = null;
