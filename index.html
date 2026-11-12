@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>k-means vs e-means</title>
+<meta name="description" content="Three simple experiments that test Meta's new e-means against classic k-means, side by side, in your browser.">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"><div class="dots"></div><div class="glow g1"></div><div class="glow g2"></div></div>
+<main>
+
+  <header class="hero">
+    <div class="eyebrow reveal">Meta FAIR paper · November 2026 · runs in your browser</div>
+    <h1 class="reveal">Is k-means <span class="accent">dead?</span></h1>
+    <p class="lede reveal">In November 2026, Meta published e-means, a new take on k-means. They claim it finds groups that are just as good in about a tenth of the time. This page lets you test that claim yourself, with three small experiments that run on your own device.</p>
+
+    <div class="versus reveal">
+      <div class="vs k">
+        <div class="vs-top"><span class="tag">k-means · 1957</span><span class="vs-num">25</span></div>
+        <div class="ticks" data-count="25"></div>
+        <p class="vs-line">Goes through <b>all</b> of the data, moves every group's centre once, then starts again. It usually does this <b>25 times</b>.</p>
+      </div>
+      <div class="vs e">
+        <div class="vs-top"><span class="tag">e-means · 2026</span><span class="vs-num">~3</span></div>
+        <div class="ticks" data-count="3"></div>
+        <p class="vs-line">Looks at a <b>small handful</b> of data at a time and nudges the centres a little after each one. It goes through all the data about <b>3 times</b>.</p>
+      </div>
+    </div>
+
+    <div class="glossary reveal">
+      <div class="g-title">Two terms used on this page</div>
+      <div class="g-grid">
+        <div><b>One read</b><span>Going through every data point once. Fewer reads means less work.</span></div>
+        <div><b>Grouping error</b><span>How far, on average, each point sits from the centre of its group. Lower means tighter, better groups.</span></div>
+      </div>
+      <p class="g-foot">In every experiment, both algorithms run at the same time, start from the same random centres and use the same code to measure distances. So any difference you see comes from the algorithm itself.</p>
+    </div>
+  </header>
+
+  <!-- Experiment 1 -->
+  <section class="exp reveal" id="race">
+    <div class="exp-head">
+      <span class="eyebrow">Experiment 1 of 3</span>
+      <h2>How quickly can each one sort <span id="race-n-title">60,000</span> handwritten digits?</h2>
+      <p class="why"><b>What we're testing:</b> Meta's main claim. Both algorithms get the same images of handwritten digits (0 to 9) and sort them into groups of look-alikes. We time how long each one takes and check whether e-means' groups are just as good.</p>
+    </div>
+
+    <ol class="steps">
+      <li><b>Pick how many digits to sort.</b> More digits means more work, so the gap between the two becomes easier to see.</li>
+      <li><b>Pick how many groups to make.</b> More groups means finer groups, for example separating a slanted 7 from an upright one.</li>
+      <li><b>Press Run experiment</b> and watch both work side by side.</li>
+    </ol>
+
+    <div class="controls">
+      <div class="ctl"><span class="ctl-label">Digits to sort</span><div class="seg" data-name="n"><button data-v="10000">10,000</button><button data-v="30000">30,000</button><button data-v="60000">60,000</button></div></div>
+      <div class="ctl"><span class="ctl-label">Groups to make</span><div class="seg" data-name="k"><button data-v="49">49</button><button data-v="100">100</button><button data-v="196">196</button></div></div>
+      <button class="run" id="race-run"><span>Run experiment</span></button>
+    </div>
+
+    <div class="lanes">
+      <div class="lane k">
+        <div class="lane-top"><span class="tag">k-means</span><span class="live" id="rk-live">Running</span></div>
+        <div class="clock" id="rk-clock">0.0<small>s</small></div>
+        <div class="reads" id="rk-reads"></div>
+        <div class="reads-label" id="rk-reads-l">Read 0 of 25</div>
+        <canvas class="digits" id="rk-grid"></canvas>
+      </div>
+      <div class="lane e">
+        <div class="lane-top"><span class="tag">e-means</span><span class="live" id="re-live">Running</span></div>
+        <div class="clock" id="re-clock">0.0<small>s</small></div>
+        <div class="reads" id="re-reads"></div>
+        <div class="reads-label" id="re-reads-l">Read 0 of 3</div>
+        <canvas class="digits" id="re-grid"></canvas>
+      </div>
+    </div>
+
+    <div class="see">
+      <div class="see-title">How to read this</div>
+      <div class="see-grid">
+        <div><b>The big clock</b><span>Time taken so far. It stops when that algorithm finishes.</span></div>
+        <div><b>The bars under it</b><span>Each bar is one read of all the digits. k-means needs 25, e-means 3.</span></div>
+        <div><b>The grid of digits</b><span>Each small square is the average of one group. Blurry squares sharpen as the groups improve.</span></div>
+        <div><b>The chart below</b><span>Grouping error over time. The faster a line drops and stops, the better.</span></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-top"><span class="chart-title">Grouping error over time <em>(lower is better)</em></span><span class="legend"><i class="k"></i>k-means<i class="e"></i>e-means</span></div>
+      <canvas class="chart" id="race-chart"></canvas>
+    </div>
+
+    <div class="result" id="race-result">
+      <div class="result-main"><span class="result-num" id="race-x">0</span><span class="result-unit">× faster</span></div>
+      <div class="result-stats">
+        <div><span class="stat" id="race-tk">–</span><span class="stat-label">k-means time</span></div>
+        <div><span class="stat accent" id="race-te">–</span><span class="stat-label">e-means time</span></div>
+        <div><span class="stat" id="race-q">–</span><span class="stat-label">e-means grouping error</span></div>
+      </div>
+      <p class="result-note" id="race-note"></p>
+    </div>
+  </section>
+
+  <!-- Experiment 2 -->
+  <section class="exp reveal" id="photo">
+    <div class="exp-head">
+      <span class="eyebrow">Experiment 2 of 3</span>
+      <h2>Does e-means help on a small, simple task like repainting a photo with <span id="photo-k-title">16</span> colours?</h2>
+      <p class="why"><b>What we're testing:</b> whether the speed-up matters on everyday data. Every pixel is a point made of three numbers: how red, green and blue it is. Each algorithm groups similar colours, uses each group's average as one paint colour, then repaints every pixel with its group's colour. Meta's paper says e-means shines on large, complex data, so here we expect a much smaller difference.</p>
+    </div>
+
+    <ol class="steps">
+      <li><b>Pick a photo,</b> or upload your own. Your photo is processed on your device and never uploaded anywhere.</li>
+      <li><b>Pick how many colours to use.</b> Fewer colours is harder, because each colour has to stand in for more of the photo.</li>
+      <li><b>Press Run experiment</b> and compare the two repainted photos.</li>
+    </ol>
+
+    <div class="controls">
+      <div class="ctl"><span class="ctl-label">Photo</span><div class="seg" data-name="img"><button data-v="data/china.jpg">Temple</button><button data-v="data/flower.jpg">Flower</button><button data-v="upload" id="mine-btn">My photo</button></div></div>
+      <div class="ctl"><span class="ctl-label">&nbsp;</span><button class="ghost" id="upload-btn">Upload a photo</button></div>
+      <div class="ctl"><span class="ctl-label">Colours to use</span><div class="seg" data-name="c"><button data-v="4">4</button><button data-v="16">16</button><button data-v="64">64</button></div></div>
+      <button class="run" id="photo-run"><span>Run experiment</span></button>
+      <input type="file" id="upload" accept="image/*" hidden>
+    </div>
+
+    <div class="photos">
+      <figure class="ph orig"><div class="frame"><canvas id="ph-orig"></canvas><span class="chip" id="ph-count">Original</span></div></figure>
+      <figure class="ph k"><div class="frame"><canvas id="ph-k"></canvas><span class="chip">k-means <b id="ph-kt"></b></span></div><div class="swatches" id="ph-ks"></div></figure>
+      <figure class="ph e"><div class="frame"><canvas id="ph-e"></canvas><span class="chip">e-means <b id="ph-et"></b></span></div><div class="swatches" id="ph-es"></div></figure>
+    </div>
+
+    <div class="see">
+      <div class="see-title">How to read this</div>
+      <div class="see-grid">
+        <div><b>The left photo</b><span>The original, with every colour it started with.</span></div>
+        <div><b>The two repaints</b><span>The same photo using only the colours each algorithm picked. The time it took is on the label.</span></div>
+        <div><b>The colour strips</b><span>The exact colours each algorithm picked, from darkest to lightest.</span></div>
+      </div>
+    </div>
+
+    <div class="result" id="photo-result">
+      <div class="result-main"><span class="result-num" id="photo-x">0</span><span class="result-unit">× faster</span></div>
+      <div class="result-stats">
+        <div><span class="stat" id="photo-tk">–</span><span class="stat-label">k-means time</span></div>
+        <div><span class="stat accent" id="photo-te">–</span><span class="stat-label">e-means time</span></div>
+        <div><span class="stat" id="photo-q">–</span><span class="stat-label">e-means colour error</span></div>
+      </div>
+      <p class="result-note" id="photo-note"></p>
+    </div>
+  </section>
+
+  <!-- Experiment 3 -->
+  <section class="exp reveal" id="scale">
+    <div class="exp-head">
+      <span class="eyebrow">Experiment 3 of 3</span>
+      <h2>Does the time saved grow as the data grows?</h2>
+      <p class="why"><b>What we're testing:</b> when switching to e-means is worth it. We run the digit-sorting task from Experiment 1 three times, on 1,000, then 10,000, then 60,000 digits, making 49 groups each time.</p>
+    </div>
+
+    <ol class="steps">
+      <li><b>Press Run experiment.</b> The three sizes run one after another.</li>
+      <li><b>Compare the bars in each row.</b> The grey bar is k-means' time and the coral bar is e-means' time. The number on the right is how many times faster e-means was.</li>
+    </ol>
+
+    <div class="controls"><span class="legend"><i class="k" style="margin-left:0"></i>k-means<i class="e"></i>e-means</span><button class="run" id="scale-run"><span>Run experiment</span></button></div>
+    <div class="sizes" id="scale-rows"></div>
+
+    <div class="result" id="scale-result">
+      <div class="result-main"><span class="result-num" id="scale-saved">0</span><span class="result-unit" id="scale-unit">seconds saved</span></div>
+      <div class="result-stats">
+        <div><span class="stat" id="scale-small">–</span><span class="stat-label" id="scale-small-l">saved on 1,000 digits</span></div>
+        <div><span class="stat accent">10 billion</span><span class="stat-label">points Meta grouped this way in 2.5 reads</span></div>
+      </div>
+      <p class="result-note" id="scale-note"></p>
+    </div>
+  </section>
+
+  <footer class="reveal">
+    <details>
+      <summary>How we kept this a fair test</summary>
+      <ul>
+        <li>Both algorithms run at the same time, each on its own CPU core, and use exactly the same code to measure distances. The difference comes from the algorithm, not the code.</li>
+        <li>Both start from the same randomly chosen centres. Grouping error is measured the same way for both, on every point, after the clock stops.</li>
+        <li>e-means here is a line-by-line copy of Meta's own code (faiss 1.16), translated to JavaScript. It picks the same settings theirs does.</li>
+        <li>Times depend on your device, and slower phones take longer. Each run starts from new random centres, so results vary slightly between runs. Meta's own code behaves the same way.</li>
+      </ul>
+    </details>
+    <p class="credits">
+      <a href="https://arxiv.org/abs/2611.09501">Read the paper</a> ·
+      <a href="https://github.com/facebookresearch/faiss/tree/main/contrib/e_means">Meta's code</a> ·
+      Digits: MNIST (LeCun, Cortes, Burges), CC BY-SA 3.0 ·
+      Photos: danielbuechele, vultilion (CC BY 2.0) ·
+      Made by <a href="https://www.instagram.com/arnitly/">@arnitly</a> · not affiliated with Meta
+    </p>
+  </footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
