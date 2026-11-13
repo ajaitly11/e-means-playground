@@ -64,19 +64,58 @@ function showResult(id, on) {
   setTimeout(reveal, 900); // in case the transition never reports back
 }
 
+// The digits ship as 4-bit pixels, two per byte (2.3 MB gzipped). The download
+// starts when the page opens, so it is usually done before anyone clicks run.
 let digitsPromise = null;
+const digitsLoad = { got: 0, total: 2321489, listeners: new Set() };
 function loadDigits() {
   if (!digitsPromise) {
-    digitsPromise = fetch("data/mnist14.bin.gz").then(async (r) => {
-      const buf = new Uint8Array(await r.arrayBuffer());
+    digitsPromise = fetch("data/mnist14-4bit.bin.gz").then(async (r) => {
+      if (!r.ok) throw new Error(`digits download failed (${r.status})`);
+      const total = +r.headers.get("content-length");
+      if (total) digitsLoad.total = total;
+      const reader = r.body.getReader();
+      const parts = [];
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        parts.push(value);
+        digitsLoad.got += value.length;
+        digitsLoad.listeners.forEach((f) => f());
+      }
+      let buf = new Uint8Array(await new Blob(parts).arrayBuffer());
       if (buf[0] === 0x1f && buf[1] === 0x8b) {
         const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"));
-        return new Uint8Array(await new Response(stream).arrayBuffer());
+        buf = new Uint8Array(await new Response(stream).arrayBuffer());
+      } // otherwise the server already decompressed it
+      const out = new Uint8Array(buf.length * 2);
+      for (let i = 0; i < buf.length; i++) {
+        out[2 * i] = (buf[i] >> 4) * 17;
+        out[2 * i + 1] = (buf[i] & 15) * 17;
       }
-      return buf; // the server already decompressed it
-    });
+      return out;
+    }).catch((err) => { digitsPromise = null; digitsLoad.got = 0; throw err; });
   }
   return digitsPromise;
+}
+
+// Shows download progress on a run button until the digits are in.
+async function waitForDigits(btn) {
+  const label = btn.firstElementChild;
+  const show = () => {
+    const pct = Math.min(99, Math.floor((100 * digitsLoad.got) / digitsLoad.total));
+    label.textContent = `Downloading digits ${pct}%`;
+  };
+  show();
+  digitsLoad.listeners.add(show);
+  try {
+    return await loadDigits();
+  } catch (err) {
+    label.textContent = "Download failed, try again";
+    throw err;
+  } finally {
+    digitsLoad.listeners.delete(show);
+  }
 }
 
 // Runs k-means and e-means at the same time, one worker each.
@@ -281,8 +320,8 @@ async function runRace() {
   if (busy) return;
   const n = +raceN.value, k = +raceK.value;
   busy = { owner: "race", stop() {} };
-  btn.firstElementChild.textContent = "Loading…";
-  const all = await loadDigits();
+  let all;
+  try { all = await waitForDigits(btn); } catch { busy = null; return; }
   resetRace(k);
   const started = performance.now();
   let raf = 0;
@@ -447,6 +486,7 @@ $("photo-run").onclick = async () => {
   }
 };
 loadPhoto("data/china.jpg");
+loadDigits().catch(() => {}); // start early; a failure retries on the next click
 
 // --------------------------------------------- 03: does size matter
 
@@ -471,8 +511,8 @@ $("scale-run").onclick = async () => {
   busy = { owner: "scale", stop() {} };
   buildSizes();
   showResult("scale-result", false);
-  btn.firstElementChild.textContent = "Loading…";
-  const all = await loadDigits();
+  let all;
+  try { all = await waitForDigits(btn); } catch { busy = null; return; }
   const times = [];
   let stopped = false, current = null, raf = 0;
   busy = { owner: "scale", stop: () => { stopped = true; if (current) current.stop(); } };

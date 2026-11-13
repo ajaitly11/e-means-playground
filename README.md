@@ -19,7 +19,7 @@ Three experiments:
 | `app.js` | Experiments, charts, drawing |
 | `engine.js` | k-means (Lloyd) and e-means; shared distance kernel |
 | `worker.js` | Runs one algorithm per Web Worker so both race at once |
-| `data/` | Digits (`mnist14.bin.gz`, 4 MB) and two CC BY 2.0 photos |
+| `data/` | Digits (`mnist14-4bit.bin.gz`, 2.3 MB: 14×14 pixels at 16 grey levels, two per byte) and two CC BY 2.0 photos |
 | `tests/check.mjs` | Runs both engines in Node and prints time and error |
 
 ## Run it locally
@@ -41,7 +41,7 @@ GitHub Pages is free for public repositories, has no server to pay for, and serv
 
 ## How faithful is the e-means port?
 
-`engine.js` follows `faiss/contrib/e_means` (faiss 1.16.0): the same batch-size and step-size laws, the cosine step schedule with a 0.1 floor, revival every 5 updates below 0.1 of the mean mass (off at 2 dimensions or fewer), donor splits drawn in proportion to mass, and the last-pass mean at the end. On the 60,000 digits with 100 groups it picks batch 2,048 and step 0.595, the same as Meta's Python code. Final errors land in the same range (Node, 3 seeds: k-means 307,965 to 309,111; e-means 307,272 to 307,818; faiss reference: k-means 307,693 to 308,689; e-means 307,248 to 307,887).
+`engine.js` follows `faiss/contrib/e_means` (faiss 1.16.0): the same batch-size and step-size laws, the cosine step schedule with a 0.1 floor, revival every 5 updates below 0.1 of the mean mass (off at 2 dimensions or fewer), donor splits drawn in proportion to mass, and the last-pass mean at the end. On the 60,000 digits with 100 groups it picks batch 2,048 and step 0.595, the same as Meta's Python code. On the original 8-bit pixels, final errors landed in the same range as faiss (Node, 3 seeds: k-means 307,965 to 309,111; e-means 307,272 to 307,818; faiss reference: k-means 307,693 to 308,689; e-means 307,248 to 307,887). The page now ships 4-bit pixels to halve the download; on those, Node gives k-means 310,930 to 311,872 and e-means 310,416 to 311,165, the same gap.
 
 ```bash
 node tests/check.mjs 60000 100 3

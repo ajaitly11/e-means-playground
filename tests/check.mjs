@@ -6,9 +6,9 @@ import { createRequire } from "node:module";
 const Engine = createRequire(import.meta.url)("../engine.js");
 
 const n = +(process.argv[2] || 60000), k = +(process.argv[3] || 100), T = +(process.argv[4] || 3), d = 196;
-const u8 = gunzipSync(readFileSync(new URL("../data/mnist14.bin.gz", import.meta.url)));
+const packed = gunzipSync(readFileSync(new URL("../data/mnist14-4bit.bin.gz", import.meta.url)));
 const X = new Float32Array(n * d);
-for (let i = 0; i < n * d; i++) X[i] = u8[i];
+for (let i = 0; i < n * d; i++) X[i] = ((i & 1 ? packed[i >> 1] & 15 : packed[i >> 1] >> 4)) * 17;
 
 for (const seed of [1, 2, 3]) {
   const L = Engine.lloyd(X, n, d, k, { seed, iters: 25 });
